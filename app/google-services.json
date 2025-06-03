@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "19745031824",
+    "project_id": "medicalai-mobile",
+    "storage_bucket": "medicalai-mobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:19745031824:android:65f1ab99fe978fbc19ba15",
+        "android_client_info": {
+          "package_name": "com.teduniversity.medicalai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAyqfCf3mg52PmjnmbN63S7OAz_HWuKeaI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
