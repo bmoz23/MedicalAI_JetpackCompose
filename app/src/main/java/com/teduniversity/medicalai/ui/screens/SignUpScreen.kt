@@ -196,14 +196,30 @@ fun SignUpScreen(
                                             .document(uid)
                                             .set(userData)
                                             .addOnSuccessListener {
-                                                loading = false
-                                                // Kayıt başarılı, toast göster ve yönlendir
-                                                Toast.makeText(
-                                                    context,
-                                                    "Registration successful!",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                                onSignedUp()
+                                                // Kullanıcı belgesi oluşturulduktan sonra raporlar alt koleksiyonunu oluştur
+                                                val placeholder = hashMapOf(
+                                                    "welcome" to true,
+                                                    "createdAt" to com.google.firebase.Timestamp.now()
+                                                )
+                                                firestore.collection("patients")
+                                                    .document(uid)
+                                                    .collection("reports")
+                                                    .document("welcome")
+                                                    .set(placeholder)
+                                                    .addOnSuccessListener {
+                                                        loading = false
+                                                        // Kayıt başarılı, toast göster ve yönlendir
+                                                        Toast.makeText(
+                                                            context,
+                                                            "Registration successful!",
+                                                            Toast.LENGTH_SHORT
+                                                        ).show()
+                                                        onSignedUp()
+                                                    }
+                                                    .addOnFailureListener { e ->
+                                                        loading = false
+                                                        error = e.message
+                                                    }
                                             }
                                             .addOnFailureListener { e ->
                                                 loading = false
