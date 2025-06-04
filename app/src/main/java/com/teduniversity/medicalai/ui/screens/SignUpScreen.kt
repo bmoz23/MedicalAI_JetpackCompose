@@ -192,7 +192,7 @@ fun SignUpScreen(
                                             "createdAt" to com.google.firebase.Timestamp.now()
                                         )
 
-                                        firestore.collection("users")
+                                        firestore.collection("patients")
                                             .document(uid)
                                             .set(userData)
                                             .addOnSuccessListener {

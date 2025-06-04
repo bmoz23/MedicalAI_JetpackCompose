@@ -161,7 +161,7 @@ fun LoginScreen(
                                 }
 
                                 // 2) Firestore'dan users/{uid} belgesini oku
-                                firestore.collection("users")
+                                firestore.collection("patients")
                                     .document(uid)
                                     .get()
                                     .addOnSuccessListener { document ->
