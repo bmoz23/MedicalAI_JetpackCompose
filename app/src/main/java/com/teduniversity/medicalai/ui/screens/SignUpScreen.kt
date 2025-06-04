@@ -1,8 +1,6 @@
+//SignUp.kt
 package com.teduniversity.medicalai.ui.screens
 
-import androidx.compose.foundation.Image
-import android.widget.Toast
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -29,9 +28,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import android.widget.Toast
 import com.teduniversity.medicalai.R
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.auth.ktx.userProfileChangeRequest
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,22 +42,22 @@ fun SignUpScreen(
     onBackToSignIn: () -> Unit
 ) {
     val auth = Firebase.auth
+    val firestore = Firebase.firestore
     val context = LocalContext.current
 
-    var name by remember { mutableStateOf("") }
-    var surname by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var name        by remember { mutableStateOf("") }
+    var surname     by remember { mutableStateOf("") }
+    var email       by remember { mutableStateOf("") }
+    var password    by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var loading by remember { mutableStateOf(false) }
+    var error       by remember { mutableStateOf<String?>(null) }
+    var loading     by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Ortaya card koymak için Column yerine Box kullandık
         ElevatedCard(
             modifier = Modifier
                 .fillMaxWidth()
@@ -167,31 +168,57 @@ fun SignUpScreen(
                         error = null
                         loading = true
 
+                        // 1) FirebaseAuth ile kullanıcı oluştur:
                         auth.createUserWithEmailAndPassword(email.trim(), password.trim())
                             .addOnSuccessListener { credential ->
-                                // Profil güncelle
+                                // 2) Profil güncelle (displayName atıyoruz)
                                 val fullName = "${name.trim()} ${surname.trim()}"
                                 val request = userProfileChangeRequest { displayName = fullName }
                                 credential.user?.updateProfile(request)
                                     ?.addOnSuccessListener {
-                                        loading = false
-                                        // → 1) Toast ile doğrulama mesajı
-                                        Toast.makeText(
-                                            context,
-                                            "Registration successful!",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        // → 2) Ardından yönlendir
-                                        onSignedUp()
+                                        // 3) Firestore'a kaydet: users/{uid} → role="patient"
+                                        val uid = credential.user?.uid
+                                        if (uid == null) {
+                                            loading = false
+                                            error = "Kullanıcı kimliği alınamadı."
+                                            return@addOnSuccessListener
+                                        }
+
+                                        val userData = hashMapOf(
+                                            "uid" to uid,
+                                            "full_name" to fullName,
+                                            "email" to email.trim(),
+                                            "role" to "patient",
+                                            "createdAt" to com.google.firebase.Timestamp.now()
+                                        )
+
+                                        firestore.collection("users")
+                                            .document(uid)
+                                            .set(userData)
+                                            .addOnSuccessListener {
+                                                loading = false
+                                                // Kayıt başarılı, toast göster ve yönlendir
+                                                Toast.makeText(
+                                                    context,
+                                                    "Registration successful!",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                                onSignedUp()
+                                            }
+                                            .addOnFailureListener { e ->
+                                                loading = false
+                                                // Firestore kaydı başarısızsa, kullanıcıyı silme veya hata gösterme
+                                                error = e.message
+                                            }
                                     }
-                                    ?.addOnFailureListener {
+                                    ?.addOnFailureListener { e ->
                                         loading = false
-                                        error = it.message
+                                        error = e.message
                                     }
                             }
-                            .addOnFailureListener {
+                            .addOnFailureListener { e ->
                                 loading = false
-                                error = it.message
+                                error = e.message
                             }
                     },
                     modifier = Modifier
@@ -199,11 +226,11 @@ fun SignUpScreen(
                         .height(52.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
-                    )
+                    ),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Text("Register", color = MaterialTheme.colorScheme.onPrimary)
                 }
-            }
 
                 // Zaten hesabı olan?
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -227,4 +254,4 @@ fun SignUpScreen(
             }
         }
     }
-
+}

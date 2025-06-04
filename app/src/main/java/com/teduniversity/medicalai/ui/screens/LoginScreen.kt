@@ -1,3 +1,4 @@
+//Login.kt
 package com.teduniversity.medicalai.ui.screens
 
 import androidx.compose.foundation.Image
@@ -17,6 +18,8 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -29,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.teduniversity.medicalai.R
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.firestore.ktx.firestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,12 +41,13 @@ fun LoginScreen(
     onSignUpClick: () -> Unit
 ) {
     val auth = Firebase.auth
+    val firestore = Firebase.firestore
 
-    var email       by remember { mutableStateOf("") }
-    var password    by remember { mutableStateOf("") }
+    var email        by remember { mutableStateOf("") }
+    var password     by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
-    var error       by remember { mutableStateOf<String?>(null) }
-    var loading     by remember { mutableStateOf(false) }
+    var error        by remember { mutableStateOf<String?>(null) }
+    var loading      by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -136,20 +141,56 @@ fun LoginScreen(
                 // Giriş butonu
                 Button(
                     onClick = {
+                        // Basit alan kontrolleri
                         if (email.isBlank() || password.isBlank()) {
                             error = "Email and password must not be empty"
                             return@Button
                         }
                         error = null
                         loading = true
+
+                        // 1) FirebaseAuth ile giriş denemesi
                         auth.signInWithEmailAndPassword(email.trim(), password.trim())
-                            .addOnSuccessListener {
-                                loading = false
-                                onLoggedIn()
+                            .addOnSuccessListener { authResult ->
+                                // Giriş başarılı → role kontrolü yapmak için Firestore'a gidiyoruz
+                                val uid = authResult.user?.uid
+                                if (uid == null) {
+                                    loading = false
+                                    error = "Kullanıcı ID alınamadı."
+                                    return@addOnSuccessListener
+                                }
+
+                                // 2) Firestore'dan users/{uid} belgesini oku
+                                firestore.collection("users")
+                                    .document(uid)
+                                    .get()
+                                    .addOnSuccessListener { document ->
+                                        loading = false
+                                        if (document.exists()) {
+                                            val role = document.getString("role")
+                                            if (role == "patient") {
+                                                // Sadece "patient" rolüne izin ver
+                                                onLoggedIn()
+                                            } else {
+                                                // Başka bir rol (örneğin "doctor") varsa çıkış yap
+                                                auth.signOut()
+                                                error = "Bu hesap bir hasta hesabı değil."
+                                            }
+                                        } else {
+                                            // Firestore'da belge yoksa
+                                            auth.signOut()
+                                            error = "Kullanıcı bilgisi bulunamadı."
+                                        }
+                                    }
+                                    .addOnFailureListener { firestoreError ->
+                                        loading = false
+                                        auth.signOut()
+                                        error = firestoreError.message
+                                    }
                             }
-                            .addOnFailureListener {
+                            .addOnFailureListener { authError ->
                                 loading = false
-                                error = it.message
+                                error = authError.message
                             }
                     },
                     modifier = Modifier

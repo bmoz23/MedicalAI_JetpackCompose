@@ -1,6 +1,5 @@
 package com.teduniversity.medicalai.viewmodel
 
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teduniversity.medicalai.data.ChatApiService
@@ -24,6 +23,43 @@ class ChatViewModel(
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages: StateFlow<List<ChatMessage>> = _messages
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    init {
+        // Send initial kickoff request when ViewModel is created
+        initiateChat()
+    }
+
+    private fun initiateChat() {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                // Send kickoff request
+                val response = apiService.initiateChat()
+
+                // Add bot's initial message to the messages
+                val botMessage = ChatMessage(
+                    id = UUID.randomUUID().toString(),
+                    text = response.question,
+                    isMine = false,
+                    timestamp = Date()
+                )
+                _messages.value = listOf(botMessage)
+            } catch (e: Exception) {
+                val errorMsg = ChatMessage(
+                    id = UUID.randomUUID().toString(),
+                    text = "Failed to initialize chat: ${e.message}",
+                    isMine = false,
+                    timestamp = Date()
+                )
+                _messages.value = listOf(errorMsg)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     // Basit bir modeller; ChatMessage Compose ekranından daha önceki dosyalarda tanımlanmıştı.
     data class ChatMessage(
         val id: String,
@@ -37,7 +73,7 @@ class ChatViewModel(
      * sonra API çağrısı yapıp gelen cevabı yine ekrana yansıt.
      */
     fun sendChatMessage(userText: String) {
-        // 1) Kullanıcı mesajını _messages’a ekle
+        // Add user message to the list
         val userMessage = ChatMessage(
             id = UUID.randomUUID().toString(),
             text = userText,
@@ -48,28 +84,30 @@ class ChatViewModel(
 
         viewModelScope.launch {
             try {
-                // 2) API’ye çağrı yap
+                _isLoading.value = true
+                // Send message to chat endpoint
                 val request = ChatRequest(message = userText)
-                val response: ChatResponse = apiService.sendMessage(request)
+                val response = apiService.sendMessage(request)
 
-                // 3) API’den gelen cevabı listeye ekle
+                // Add bot's response to the messages
                 val botMessage = ChatMessage(
                     id = UUID.randomUUID().toString(),
-                    text = response.reply,
+                    text = response.question,
                     isMine = false,
                     timestamp = Date()
                 )
                 _messages.value = _messages.value + botMessage
 
             } catch (e: Exception) {
-                // Hata durumunda gözlem için bir hata mesajı ekleyebilirsiniz
                 val errorMsg = ChatMessage(
                     id = UUID.randomUUID().toString(),
-                    text = "Sunucuya bağlanırken hata oluştu: ${e.message}",
+                    text = "Failed to send message: ${e.message}",
                     isMine = false,
                     timestamp = Date()
                 )
                 _messages.value = _messages.value + errorMsg
+            } finally {
+                _isLoading.value = false
             }
         }
     }

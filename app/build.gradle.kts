@@ -42,7 +42,9 @@ android {
 }
 
 dependencies {
-
+    // ================================================
+    // 1) ANDROIDX, COMPOSE ve DİĞER STANDART KÜTÜPHANELER
+    // ================================================
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -51,19 +53,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.firebase.auth.ktx)
-    implementation(libs.androidx.credentials)
-    implementation(libs.androidx.credentials.play.services.auth)
-    implementation(libs.googleid)
-    implementation(libs.firebase.storage)
-    implementation(libs.firebase.database)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.ui.test.junit4)
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
+
     implementation("androidx.navigation:navigation-compose:2.9.0")
     implementation("androidx.compose.material3:material3:1.3.2")
     implementation("androidx.compose.material:material-icons-extended")
@@ -74,6 +64,33 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+
+
+    // ================================================
+    // 2) FIREBASE – BOM TEMELLİ (TÜM KÜTÜPHANELER BURADAN YÖNETİLİR)
+    // ================================================
+    // Aşağıdaki satır, tüm Firebase KTX kütüphanelerini '32.0.0' sürüm setiyle eşitler:
+    implementation(platform("com.google.firebase:firebase-bom:32.0.0"))
+
+    // Yalnızca aşağıdaki '-ktx' paketlerini ekleyin.
+    // Hiçbir yerde 'com.google.firebase:firebase-auth' (non-ktx) veya
+    // 'com.google.firebase:firebase-firestore:22.0.1' gibi direkt sürüm numarasıyla satır
+    // bulunmamalıdır.
+
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
+    implementation("com.google.firebase:firebase-database-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")
+
+    // ================================================
+    // 3) TEST ve DEBUG BAĞIMLILIKLARI
+    // ================================================
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
 }

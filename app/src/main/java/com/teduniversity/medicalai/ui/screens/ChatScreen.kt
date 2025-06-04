@@ -9,19 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,7 +23,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * Bu versiyon ChatViewModel’i kullanıyor.
+ * Bu versiyon ChatViewModel'i kullanıyor.
  */
 @ExperimentalMaterial3Api
 @Composable
@@ -45,7 +33,7 @@ fun ChatScreenWithViewModel(
         factory = object : androidx.lifecycle.ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                // ChatApiService’i kullanarak ChatViewModel örneği oluşturuyoruz
+                // ChatApiService'i kullanarak ChatViewModel örneği oluşturuyoruz
                 val apiService = com.teduniversity.medicalai.data.RetrofitInstance.api
                 return ChatViewModel(apiService) as T
             }
@@ -54,8 +42,9 @@ fun ChatScreenWithViewModel(
 ) {
     // 1) Mesaj listesini ViewModel üzerinden alıyoruz:
     val messages by viewModel.messages.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
-    // 2) Kullanıcı kutusunun state’ini izleyelim:
+    // 2) Kullanıcı kutusunun state'ini izleyelim:
     var textState by remember { mutableStateOf(TextFieldValue("")) }
     val listState = rememberLazyListState()
 
@@ -73,7 +62,7 @@ fun ChatScreenWithViewModel(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Geri",
+                            contentDescription = "Back",
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
@@ -106,6 +95,24 @@ fun ChatScreenWithViewModel(
                     ChatBubble(msg)
                     Spacer(modifier = Modifier.height(6.dp))
                 }
+                
+                // Show typing indicator when loading
+                if (isLoading && messages.isNotEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    }
+                }
             }
 
             // —— 2) Mesaj Yazma Alanı + Gönder Butonu ——
@@ -119,14 +126,17 @@ fun ChatScreenWithViewModel(
                 OutlinedTextField(
                     value = textState,
                     onValueChange = { textState = it },
-                    placeholder = { Text("Mesaj yazın...") },
+                    placeholder = { Text("Type a message...") },
                     modifier = Modifier
                         .weight(1f)
                         .heightIn(min = 56.dp),
+                    enabled = !isLoading,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                        cursorColor = MaterialTheme.colorScheme.primary
+                        cursorColor = MaterialTheme.colorScheme.primary,
+                        disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
+                        disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -134,21 +144,35 @@ fun ChatScreenWithViewModel(
                     onClick = {
                         val newText = textState.text.trim()
                         if (newText.isNotEmpty()) {
-                            // 3) ViewModel’e mesajı gönderiyoruz:
+                            // 3) ViewModel'e mesajı gönderiyoruz:
                             viewModel.sendChatMessage(newText)
                             textState = TextFieldValue("")
                         }
                     },
+                    enabled = !isLoading && textState.text.trim().isNotEmpty(),
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
+                        .background(
+                            if (!isLoading && textState.text.trim().isNotEmpty())
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                        )
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Send,
-                        contentDescription = "Gönder",
-                        tint = Color.White
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Send,
+                            contentDescription = "Send",
+                            tint = Color.White
+                        )
+                    }
                 }
             }
         }

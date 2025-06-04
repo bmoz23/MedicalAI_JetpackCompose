@@ -1,13 +1,14 @@
 {
   "project_info": {
-    "project_number": "19745031824",
-    "project_id": "medicalai-mobile",
-    "storage_bucket": "medicalai-mobile.firebasestorage.app"
+    "project_number": "856290688163",
+    "firebase_url": "https://fir-b5ca1-default-rtdb.firebaseio.com",
+    "project_id": "fir-b5ca1",
+    "storage_bucket": "fir-b5ca1.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:19745031824:android:65f1ab99fe978fbc19ba15",
+        "mobilesdk_app_id": "1:856290688163:android:22c408f1d821b4e7e25316",
         "android_client_info": {
           "package_name": "com.teduniversity.medicalai"
         }
@@ -15,7 +16,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "boss"
+          "current_key": "AIzaSyAOKcMeTSNjXJLZcjVgJ2PMR7yQKryhopw"
         }
       ],
       "services": {
