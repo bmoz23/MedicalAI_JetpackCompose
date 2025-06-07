@@ -1,5 +1,8 @@
 package com.teduniversity.medicalai.ui.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
@@ -17,77 +20,88 @@ import com.teduniversity.medicalai.ui.screens.SignUpScreen
 fun AppNavHost() {
     val navController = rememberNavController()
 
-    NavHost(navController, startDestination = "login") {
-
-        // 1) Login
-        composable("login") {
-            LoginScreen(
-                onLoggedIn = {
-                    navController.navigate("home") {
-                        popUpTo("login") { inclusive = true }
+    // -----------------------------------------------------
+    // 1) En dışa Box ekledik ve sistem çubukları için padding verdik
+    // -----------------------------------------------------
+    Box(
+        modifier = androidx.compose.ui.Modifier
+            .fillMaxSize()
+            .systemBarsPadding() // Status ve Navigation bar kadar boşluk
+    ) {
+        NavHost(
+            navController = navController,
+            startDestination = "login"
+        ) {
+            // 1) Login
+            composable("login") {
+                LoginScreen(
+                    onLoggedIn = {
+                        navController.navigate("home") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    },
+                    onSignUpClick = {
+                        navController.navigate("signup")
                     }
-                },
-                onSignUpClick = {
-                    navController.navigate("signup")
-                }
-            )
-        }
+                )
+            }
 
-        // 2) SignUp
-        composable("signup") {
-            SignUpScreen(
-                onSignedUp = {
-                    navController.navigate("login") {
-                        popUpTo("signup") { inclusive = true }
+            // 2) SignUp
+            composable("signup") {
+                SignUpScreen(
+                    onSignedUp = {
+                        navController.navigate("login") {
+                            popUpTo("signup") { inclusive = true }
+                        }
+                    },
+                    onBackToSignIn = {
+                        navController.popBackStack()
                     }
-                },
-                onBackToSignIn = {
-                    navController.popBackStack()
-                }
-            )
-        }
+                )
+            }
 
-        // 3) Home
-        composable("home") {
-            HomeScreen(
-                onSignOut = {
-                    navController.navigate("login") {
-                        popUpTo("home") { inclusive = true }
+            // 3) Home
+            composable("home") {
+                HomeScreen(
+                    onSignOut = {
+                        navController.navigate("login") {
+                            popUpTo("home") { inclusive = true }
+                        }
+                    },
+                    onNewChatClick = {
+                        navController.navigate("chat")
+                    },
+                    onReportClick = {
+                        navController.navigate("reports")
+                    },
+                    onOpenChatHistory = { _chatItem ->
+                        // Eğer geçmişten bir sohbeti açmak isterseniz:
+                        // navController.navigate("chat/${chatItem.id}")
                     }
-                },
-                onNewChatClick = {
-                    navController.navigate("chat")
-                },
-                onReportClick = {
-                    navController.navigate("reports")
-                },
-                onOpenChatHistory = { chatItem ->
-                    // Eğer geçmişten bir sohbeti açmak isterseniz
-                    // örn: navController.navigate("chat/${chatItem.id}")
-                }
-            )
-        }
+                )
+            }
 
-        // 4) Chat (ViewModel destekli)
-        composable("chat") {
-            ChatScreenWithViewModel(
-                onBack = { navController.popBackStack() }
-            )
-        }
+            // 4) Chat (ViewModel destekli)
+            composable("chat") {
+                ChatScreenWithViewModel(
+                    onBack = { navController.popBackStack() }
+                )
+            }
 
-        // 5) Input (veya diğer) ekranlar…
-        composable("input") {
-            InputScreen(onSubmit = { symptom ->
-                val encoded = java.net.URLEncoder.encode(symptom, "utf-8")
-                navController.navigate("result/$encoded")
-            })
-        }
+            // 5) Input (veya diğer) ekranlar…
+            composable("input") {
+                InputScreen(onSubmit = { symptom ->
+                    val encoded = java.net.URLEncoder.encode(symptom, "utf-8")
+                    navController.navigate("result/$encoded")
+                })
+            }
 
-        // Reports Screen
-        composable("reports") {
-            ReportsScreen()
-        }
+            // 6) Reports Screen
+            composable("reports") {
+                ReportsScreen()
+            }
 
-        // … sonuç ekranları vs.
+            // … Diğer rotalar (örneğin “result/{symptom}” vb.) …
+        }
     }
 }
