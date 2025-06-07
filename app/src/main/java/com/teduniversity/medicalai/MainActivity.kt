@@ -16,7 +16,16 @@ import com.google.firebase.FirebaseApp
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 1) Edge-to-Edge modunu etkinleştiriyoruz:
+        //    Bu satır, Compose'un içerik çizimini sistem çubuklarının (status/navigation) altına kadar uzatır.
+        //    Eğer bunu koymazsak Compose içeriği çubukların altına çizilmez.
+        enableEdgeToEdge()
+
+        // 2) Firebase’in initialize edilmesi:
         FirebaseApp.initializeApp(this)
+
+        // 3) setContent içinde tema ve NavHost’u yükle:
         setContent {
             MedicalAITheme(dynamicColor = false) {
                 AppNavHost()
