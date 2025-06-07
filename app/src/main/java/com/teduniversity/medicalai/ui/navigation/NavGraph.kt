@@ -20,13 +20,10 @@ import com.teduniversity.medicalai.ui.screens.SignUpScreen
 fun AppNavHost() {
     val navController = rememberNavController()
 
-    // -----------------------------------------------------
-    // 1) En dışa Box ekledik ve sistem çubukları için padding verdik
-    // -----------------------------------------------------
     Box(
         modifier = androidx.compose.ui.Modifier
             .fillMaxSize()
-            .systemBarsPadding() // Status ve Navigation bar kadar boşluk
+            .systemBarsPadding()
     ) {
         NavHost(
             navController = navController,
@@ -63,10 +60,8 @@ fun AppNavHost() {
             // 3) Home
             composable("home") {
                 HomeScreen(
-                    onSignOut = {
-                        navController.navigate("login") {
-                            popUpTo("home") { inclusive = true }
-                        }
+                    onNotificationClick = {
+                        navController.navigate("notifications")
                     },
                     onNewChatClick = {
                         navController.navigate("chat")
@@ -74,9 +69,11 @@ fun AppNavHost() {
                     onReportClick = {
                         navController.navigate("reports")
                     },
+                    onProfileClick = {
+                        navController.navigate("profile")
+                    },
                     onOpenChatHistory = { _chatItem ->
-                        // Eğer geçmişten bir sohbeti açmak isterseniz:
-                        // navController.navigate("chat/${chatItem.id}")
+                        // navController.navigate("chat/${_chatItem.id}")
                     }
                 )
             }
@@ -88,7 +85,22 @@ fun AppNavHost() {
                 )
             }
 
-            // 5) Input (veya diğer) ekranlar…
+            // 5) Reports Screen
+            composable("reports") {
+                ReportsScreen()
+            }
+
+            // 6) Notifications Screen (henüz yoksa placeholder)
+            composable("notifications") {
+                /* TODO: NotificationScreen() */
+            }
+
+            // 7) Profile/Settings Screen (henüz yoksa placeholder)
+            composable("profile") {
+                /* TODO: ProfileSettingsScreen() */
+            }
+
+            // 8) Input Screen
             composable("input") {
                 InputScreen(onSubmit = { symptom ->
                     val encoded = java.net.URLEncoder.encode(symptom, "utf-8")
@@ -96,12 +108,7 @@ fun AppNavHost() {
                 })
             }
 
-            // 6) Reports Screen
-            composable("reports") {
-                ReportsScreen()
-            }
-
-            // … Diğer rotalar (örneğin “result/{symptom}” vb.) …
+            // … gerekirse result/{symptom} vb. diğer rotalar
         }
     }
 }
