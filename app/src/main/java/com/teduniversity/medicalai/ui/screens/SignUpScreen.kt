@@ -1,10 +1,13 @@
-//SignUp.kt
 package com.teduniversity.medicalai.ui.screens
 
+import androidx.compose.foundation.text.KeyboardOptions
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.material3.CardDefaults.elevatedCardColors
 import androidx.compose.material3.CardDefaults.elevatedCardElevation
@@ -18,18 +21,14 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.*
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import android.widget.Toast
-import com.teduniversity.medicalai.R
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.auth.ktx.userProfileChangeRequest
 import com.google.firebase.firestore.ktx.firestore
@@ -41,17 +40,22 @@ fun SignUpScreen(
     onSignedUp: () -> Unit,
     onBackToSignIn: () -> Unit
 ) {
-    val auth = Firebase.auth
+    val auth      = Firebase.auth
     val firestore = Firebase.firestore
-    val context = LocalContext.current
+    val context   = LocalContext.current
 
-    var name        by remember { mutableStateOf("") }
-    var surname     by remember { mutableStateOf("") }
-    var email       by remember { mutableStateOf("") }
-    var password    by remember { mutableStateOf("") }
+    // Form state
+    var name         by remember { mutableStateOf("") }
+    var surname      by remember { mutableStateOf("") }
+    var email        by remember { mutableStateOf("") }
+    var password     by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
-    var error       by remember { mutableStateOf<String?>(null) }
-    var loading     by remember { mutableStateOf(false) }
+    var age          by remember { mutableStateOf("") }
+    var gender       by remember { mutableStateOf("") }
+    var phoneNumber  by remember { mutableStateOf("") }
+
+    var error   by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -61,26 +65,26 @@ fun SignUpScreen(
         ElevatedCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(top = 100.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+                .padding(horizontal = 24.dp, vertical = 24.dp),
+            shape     = RoundedCornerShape(24.dp),
+            colors    = elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = elevatedCardElevation(defaultElevation = 8.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text("Sign Up", style = MaterialTheme.typography.headlineMedium)
                 Text("Create your account", style = MaterialTheme.typography.bodyMedium)
 
-                // Name
+                // First Name
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Name") },
+                    label = { Text("First Name") },
                     leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
@@ -89,14 +93,18 @@ fun SignUpScreen(
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                         cursorColor          = MaterialTheme.colorScheme.primary
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Next
+                    )
                 )
 
-                // Surname
+                // Last Name
                 OutlinedTextField(
                     value = surname,
                     onValueChange = { surname = it },
-                    label = { Text("Surname") },
+                    label = { Text("Last Name") },
                     leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
@@ -105,7 +113,11 @@ fun SignUpScreen(
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                         cursorColor          = MaterialTheme.colorScheme.primary
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Next
+                    )
                 )
 
                 // Email
@@ -121,7 +133,11 @@ fun SignUpScreen(
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                         cursorColor          = MaterialTheme.colorScheme.primary
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    )
                 )
 
                 // Password
@@ -133,7 +149,7 @@ fun SignUpScreen(
                     trailingIcon = {
                         IconButton(onClick = { showPassword = !showPassword }) {
                             Icon(
-                                imageVector = if (showPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                 contentDescription = null
                             )
                         }
@@ -146,124 +162,168 @@ fun SignUpScreen(
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                         cursorColor          = MaterialTheme.colorScheme.primary
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Next
+                    )
                 )
 
-                // Hata veya yükleniyor göstergesi
+                // Age
+                OutlinedTextField(
+                    value = age,
+                    onValueChange = { age = it.filter(Char::isDigit) },
+                    label = { Text("Age") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor   = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        cursorColor          = MaterialTheme.colorScheme.primary
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next
+                    )
+                )
+
+                // Gender
+                OutlinedTextField(
+                    value = gender,
+                    onValueChange = { gender = it },
+                    label = { Text("Gender") },
+                    placeholder = { Text("male / female / other") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor   = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        cursorColor          = MaterialTheme.colorScheme.primary
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Next
+                    )
+                )
+
+                // Phone Number
+                OutlinedTextField(
+                    value = phoneNumber,
+                    onValueChange = { phoneNumber = it.filter(Char::isDigit) },
+                    label = { Text("Phone Number") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor   = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        cursorColor          = MaterialTheme.colorScheme.primary
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Phone,
+                        imeAction = ImeAction.Done
+                    )
+                )
+
+                // Error & Loading
                 if (error != null) {
                     Text(error!!, color = MaterialTheme.colorScheme.error)
                 }
                 if (loading) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    LinearProgressIndicator(Modifier.fillMaxWidth())
                 }
 
-                // Register butonu
+                // Register Button
                 Button(
                     onClick = {
-                        // Basit form validasyonu
-                        if (name.isBlank() || surname.isBlank() || email.isBlank() || password.isBlank()) {
-                            error = "All fields are required"
-                            return@Button
-                        }
-                        error = null
-                        loading = true
-
-                        // 1) FirebaseAuth ile kullanıcı oluştur:
-                        auth.createUserWithEmailAndPassword(email.trim(), password.trim())
-                            .addOnSuccessListener { credential ->
-                                // 2) Profil güncelle (displayName atıyoruz)
-                                val fullName = "${name.trim()} ${surname.trim()}"
-                                val request = userProfileChangeRequest { displayName = fullName }
-                                credential.user?.updateProfile(request)
-                                    ?.addOnSuccessListener {
-                                        // 3) Firestore'a kaydet: users/{uid} → role="patient"
-                                        val uid = credential.user?.uid
-                                        if (uid == null) {
-                                            loading = false
-                                            error = "Kullanıcı kimliği alınamadı."
-                                            return@addOnSuccessListener
+                        // Basit validasyon
+                        when {
+                            name.isBlank() || surname.isBlank() ->
+                                error = "Name & surname are required"
+                            email.isBlank() ->
+                                error = "Email is required"
+                            password.length < 6 ->
+                                error = "Password must be at least 6 chars"
+                            age.toIntOrNull() == null ->
+                                error = "Valid age is required"
+                            gender.isBlank() ->
+                                error = "Gender is required"
+                            phoneNumber.isBlank() ->
+                                error = "Phone number is required"
+                            else -> {
+                                error = null
+                                loading = true
+                                // 1) Auth ile kullanıcı oluştur
+                                auth.createUserWithEmailAndPassword(
+                                    email.trim(), password.trim()
+                                ).addOnSuccessListener { cred ->
+                                    val uid = cred.user!!.uid
+                                    val fullName = "${name.trim()} ${surname.trim()}"
+                                    // 2) DisplayName ayarla
+                                    val profileUpdate = userProfileChangeRequest {
+                                        displayName = fullName
+                                    }
+                                    cred.user!!
+                                        .updateProfile(profileUpdate)
+                                        .addOnCompleteListener {
+                                            // 3) Firestore’a hasta dokümanı kaydet
+                                            val userData = hashMapOf(
+                                                "uid"           to uid,
+                                                "first_name"    to name.trim(),
+                                                "last_name"     to surname.trim(),
+                                                "full_name"     to fullName,
+                                                "email"         to email.trim(),
+                                                "role"          to "patient",
+                                                "createdAt"     to Timestamp.now(),
+                                                "age"           to age.toInt(),
+                                                "gender"        to gender.trim(),
+                                                "phone_number"  to phoneNumber.trim()
+                                            )
+                                            firestore
+                                                .collection("patients")
+                                                .document(uid)
+                                                .set(userData)
+                                                .addOnSuccessListener {
+                                                    loading = false
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Registration successful!",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                    onSignedUp()
+                                                }
+                                                .addOnFailureListener { e ->
+                                                    loading = false
+                                                    error = e.message
+                                                }
                                         }
-
-                                        val userData = hashMapOf(
-                                            "uid" to uid,
-                                            "full_name" to fullName,
-                                            "email" to email.trim(),
-                                            "role" to "patient",
-                                            "createdAt" to com.google.firebase.Timestamp.now()
-                                        )
-
-                                        firestore.collection("patients")
-                                            .document(uid)
-                                            .set(userData)
-                                            .addOnSuccessListener {
-                                                // Kullanıcı belgesi oluşturulduktan sonra raporlar alt koleksiyonunu oluştur
-                                                val placeholder = hashMapOf(
-                                                    "welcome" to true,
-                                                    "createdAt" to com.google.firebase.Timestamp.now()
-                                                )
-                                                firestore.collection("patients")
-                                                    .document(uid)
-                                                    .collection("reports")
-                                                    .document("welcome")
-                                                    .set(placeholder)
-                                                    .addOnSuccessListener {
-                                                        loading = false
-                                                        // Kayıt başarılı, toast göster ve yönlendir
-                                                        Toast.makeText(
-                                                            context,
-                                                            "Registration successful!",
-                                                            Toast.LENGTH_SHORT
-                                                        ).show()
-                                                        onSignedUp()
-                                                    }
-                                                    .addOnFailureListener { e ->
-                                                        loading = false
-                                                        error = e.message
-                                                    }
-                                            }
-                                            .addOnFailureListener { e ->
-                                                loading = false
-                                                // Firestore kaydı başarısızsa, kullanıcıyı silme veya hata gösterme
-                                                error = e.message
-                                            }
-                                    }
-                                    ?.addOnFailureListener { e ->
-                                        loading = false
-                                        error = e.message
-                                    }
+                                }.addOnFailureListener { e ->
+                                    loading = false
+                                    error = e.message
+                                }
                             }
-                            .addOnFailureListener { e ->
-                                loading = false
-                                error = e.message
-                            }
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text("Register", color = MaterialTheme.colorScheme.onPrimary)
                 }
 
-                // Zaten hesabı olan?
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                // Already have account?
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     ClickableText(
                         text = buildAnnotatedString {
                             append("Already have an account? ")
-                            withStyle(
-                                style = SpanStyle(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            ) {
+                            withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)) {
                                 append("Sign In")
                             }
                         },
-                        modifier = Modifier,
-                        style = MaterialTheme.typography.bodyMedium,
                         onClick = { onBackToSignIn() }
                     )
                 }
