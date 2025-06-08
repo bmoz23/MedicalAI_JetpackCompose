@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.util.*
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 /**
  * ChatViewModel:
@@ -35,8 +37,14 @@ class ChatViewModel(
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                // Send kickoff request
-                val response = apiService.initiateChat()
+                // Get user UID from Firebase Auth
+                val currentUser = Firebase.auth.currentUser
+                if (currentUser == null) {
+                    throw Exception("User not authenticated")
+                }
+                
+                // Send kickoff request with session_uuid
+                val response = apiService.initiateChat(sessionUuid = currentUser.uid)
 
                 // Add bot's initial message to the messages
                 val botMessage = ChatMessage(
@@ -85,9 +93,18 @@ class ChatViewModel(
         viewModelScope.launch {
             try {
                 _isLoading.value = true
+                // Get user UID from Firebase Auth
+                val currentUser = Firebase.auth.currentUser
+                if (currentUser == null) {
+                    throw Exception("User not authenticated")
+                }
+                
                 // Send message to chat endpoint
                 val request = ChatRequest(message = userText)
-                val response = apiService.sendMessage(request)
+                val response = apiService.sendMessage(
+                    sessionUuid = currentUser.uid,
+                    request = request
+                )
 
                 // Add bot's response to the messages
                 val botMessage = ChatMessage(

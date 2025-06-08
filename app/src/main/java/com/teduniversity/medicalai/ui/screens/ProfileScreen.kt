@@ -38,16 +38,13 @@ data class UserProfile(
     val phoneNumber: String = "",
     val age: Int = 0,
     val gender: String = "",
-    val height: String = "",
-    val weight: String = "",
-    val bloodType: String = "",
     val location: String = "",
     val createdAt: Long = 0
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(onLogout: () -> Unit = {}) {
     val coroutineScope = rememberCoroutineScope()
     var userProfile by remember { mutableStateOf(UserProfile()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -122,21 +119,6 @@ fun ProfileScreen() {
                                 editValue = userProfile.gender
                                 showEditDialog = true
                             },
-                            ProfileItem("Boy", userProfile.height.ifEmpty { "Belirtilmemiş" }, Icons.Default.Height) {
-                                editField = "height"
-                                editValue = userProfile.height
-                                showEditDialog = true
-                            },
-                            ProfileItem("Kilo", userProfile.weight.ifEmpty { "Belirtilmemiş" }, Icons.Default.FitnessCenter) {
-                                editField = "weight"
-                                editValue = userProfile.weight
-                                showEditDialog = true
-                            },
-                            ProfileItem("Kan Grubu", userProfile.bloodType.ifEmpty { "Belirtilmemiş" }, Icons.Default.Bloodtype) {
-                                editField = "bloodType"
-                                editValue = userProfile.bloodType
-                                showEditDialog = true
-                            },
                             ProfileItem("Konum", userProfile.location.ifEmpty { "Belirtilmemiş" }, Icons.Default.LocationOn) {
                                 editField = "location"
                                 editValue = userProfile.location
@@ -177,10 +159,7 @@ fun ProfileScreen() {
                         ActionButton(
                             text = "Çıkış Yap",
                             icon = Icons.Default.Logout,
-                            onClick = { 
-                                Firebase.auth.signOut()
-                                // TODO: Navigate to login
-                            },
+                            onClick = onLogout,
                             isDestructive = true
                         )
                     }
@@ -479,9 +458,6 @@ private fun getFieldDisplayName(fieldName: String): String {
     return when (fieldName) {
         "age" -> "Yaş"
         "gender" -> "Cinsiyet"
-        "height" -> "Boy"
-        "weight" -> "Kilo"
-        "bloodType" -> "Kan Grubu"
         "location" -> "Konum"
         "phoneNumber" -> "Telefon"
         else -> fieldName
@@ -520,9 +496,6 @@ private suspend fun loadUserProfile(callback: (UserProfile?, String?) -> Unit) {
                         else -> 0
                     },
                     gender = document.getString("gender") ?: "",
-                    height = document.getString("height") ?: "",
-                    weight = document.getString("weight") ?: "",
-                    bloodType = document.getString("blood_type") ?: "",
                     location = document.getString("location") ?: "",
                     createdAt = document.getTimestamp("createdAt")?.toDate()?.time ?: 0L
                 )
@@ -556,9 +529,6 @@ private suspend fun updateUserProfile(
             val updateData: Map<String, Any> = when (fieldName) {
                 "age" -> mapOf("age" to (newValue.toIntOrNull() ?: 0))
                 "gender" -> mapOf("gender" to newValue)
-                "height" -> mapOf("height" to newValue)
-                "weight" -> mapOf("weight" to newValue)
-                "bloodType" -> mapOf("blood_type" to newValue)
                 "location" -> mapOf("location" to newValue)
                 "phoneNumber" -> mapOf("phone_number" to newValue)
                 else -> emptyMap()

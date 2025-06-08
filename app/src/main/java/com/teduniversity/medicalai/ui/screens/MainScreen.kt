@@ -22,7 +22,7 @@ import com.teduniversity.medicalai.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen() {
+fun MainScreen(onLogout: () -> Unit = {}) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -63,7 +63,9 @@ fun MainScreen() {
             composable("home") {
                 HomeScreen(
                     onNotificationClick = { /* TODO */ },
-                    onNewChatClick = { /* TODO: Navigate to chat */ },
+                    onNewChatClick = { 
+                        navController.navigate("chat")
+                    },
                     onReportClick = {
                         navController.navigate("reports") {
                             popUpTo(navController.graph.startDestinationId)
@@ -80,12 +82,18 @@ fun MainScreen() {
                 )
             }
             
+            composable("chat") {
+                ChatScreenWithViewModel(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            
             composable("reports") {
                 ReportsScreen()
             }
             
             composable("profile") {
-                ProfileScreen()
+                ProfileScreen(onLogout = onLogout)
             }
         }
     }

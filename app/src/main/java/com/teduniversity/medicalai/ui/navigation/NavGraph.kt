@@ -13,7 +13,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import com.teduniversity.medicalai.ui.screens.ChatScreenWithViewModel
 import com.teduniversity.medicalai.ui.screens.HomeScreen
 import com.teduniversity.medicalai.ui.screens.InputScreen
 import com.teduniversity.medicalai.ui.screens.LoginScreen
@@ -40,6 +39,12 @@ fun AppNavHost() {
         
         // Auth state değişikliklerini dinle
         auth.addAuthStateListener(authStateListener)
+    }
+    
+    // Logout fonksiyonu
+    val logout = {
+        auth.signOut()
+        isAuthenticated = false
     }
 
     Box(
@@ -92,13 +97,7 @@ fun AppNavHost() {
                     startDestination = "main"
                 ) {
                     composable("main") {
-                        MainScreen()
-                    }
-
-                    composable("chat") {
-                        ChatScreenWithViewModel(
-                            onBack = { navController.popBackStack() }
-                        )
+                        MainScreen(onLogout = logout)
                     }
 
                     composable("reports") {
