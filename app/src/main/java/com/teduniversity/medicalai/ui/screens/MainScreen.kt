@@ -27,38 +27,13 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    Scaffold(
-        bottomBar = {
-            CustomBottomBar(
-                selectedIndex = when (currentRoute) {
-                    "home" -> 0
-                    "reports" -> 1
-                    "profile" -> 2
-                    else -> 0
-                },
-                onItemSelected = { index ->
-                    when (index) {
-                        0 -> navController.navigate("home") {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
-                        }
-                        1 -> navController.navigate("reports") {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
-                        }
-                        2 -> navController.navigate("profile") {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
-                        }
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
+    // Chat ekranında bottom bar gizlenmeli
+    if (currentRoute == "chat") {
+        // Chat için ayrı scaffold (bottom bar olmadan)
         NavHost(
             navController = navController,
             startDestination = "home",
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.fillMaxSize()
         ) {
             composable("home") {
                 HomeScreen(
@@ -94,6 +69,78 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             
             composable("profile") {
                 ProfileScreen(onLogout = onLogout)
+            }
+        }
+    } else {
+        // Normal ekranlar için bottom bar ile scaffold
+        Scaffold(
+            bottomBar = {
+                CustomBottomBar(
+                    selectedIndex = when (currentRoute) {
+                        "home" -> 0
+                        "reports" -> 1
+                        "profile" -> 2
+                        else -> 0
+                    },
+                    onItemSelected = { index ->
+                        when (index) {
+                            0 -> navController.navigate("home") {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
+                            1 -> navController.navigate("reports") {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
+                            2 -> navController.navigate("profile") {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
+                        }
+                    }
+                )
+            }
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = "home",
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable("home") {
+                    HomeScreen(
+                        onNotificationClick = { /* TODO */ },
+                        onNewChatClick = { 
+                            navController.navigate("chat")
+                        },
+                        onReportClick = {
+                            navController.navigate("reports") {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
+                        },
+                        onProfileClick = {
+                            navController.navigate("profile") {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
+                        },
+                        onOpenChatHistory = { /* TODO */ }
+                    )
+                }
+                
+                composable("chat") {
+                    ChatScreenWithViewModel(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+                
+                composable("reports") {
+                    ReportsScreen()
+                }
+                
+                composable("profile") {
+                    ProfileScreen(onLogout = onLogout)
+                }
             }
         }
     }

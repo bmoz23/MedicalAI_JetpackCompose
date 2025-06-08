@@ -51,26 +51,19 @@ fun ChatScreenWithViewModel(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = "MedicalAI Chat",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                },
+                title = { }, // Title kaldırıldı
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            tint = com.teduniversity.medicalai.ui.theme.BrandOnSecondaryGreen
                         )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    containerColor = com.teduniversity.medicalai.ui.theme.BrandSecondaryGreen,
+                    navigationIconContentColor = com.teduniversity.medicalai.ui.theme.BrandOnSecondaryGreen
                 )
             )
         },
@@ -155,9 +148,9 @@ fun ChatScreenWithViewModel(
                         .clip(CircleShape)
                         .background(
                             if (!isLoading && textState.text.trim().isNotEmpty())
-                                MaterialTheme.colorScheme.primary
+                                com.teduniversity.medicalai.ui.theme.BrandSecondaryGreen
                             else
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                                com.teduniversity.medicalai.ui.theme.BrandSecondaryGreen.copy(alpha = 0.6f)
                         )
                 ) {
                     if (isLoading) {
@@ -186,10 +179,10 @@ fun ChatScreenWithViewModel(
 @Composable
 private fun ChatBubble(message: ChatViewModel.ChatMessage) {
     val alignment = if (message.isMine) Alignment.End else Alignment.Start
-    val bubbleColor = if (message.isMine) MaterialTheme.colorScheme.primary
-    else MaterialTheme.colorScheme.surfaceVariant
-    val contentColor = if (message.isMine) MaterialTheme.colorScheme.onPrimary
-    else MaterialTheme.colorScheme.onSurfaceVariant
+    val bubbleColor = if (message.isMine) com.teduniversity.medicalai.ui.theme.PrimaryContainer // açık mavi (user)
+    else com.teduniversity.medicalai.ui.theme.SecondaryContainer // açık yeşil (agent)
+    val contentColor = if (message.isMine) com.teduniversity.medicalai.ui.theme.OnPrimaryContainer
+    else com.teduniversity.medicalai.ui.theme.OnSecondaryContainer
 
     Column(
         modifier = Modifier.fillMaxWidth(),

@@ -22,6 +22,7 @@ import androidx.compose.ui.window.Dialog
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.auth.EmailAuthProvider
 import com.teduniversity.medicalai.ui.theme.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -52,6 +53,14 @@ fun ProfileScreen(onLogout: () -> Unit = {}) {
     var showEditDialog by remember { mutableStateOf(false) }
     var editField by remember { mutableStateOf("") }
     var editValue by remember { mutableStateOf("") }
+    
+    // Şifre değiştirme state'leri
+    var showPasswordDialog by remember { mutableStateOf(false) }
+    var currentPassword by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var isChangingPassword by remember { mutableStateOf(false) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
 
     // Firebase'den user profilini çek
     LaunchedEffect(Unit) {
@@ -105,21 +114,21 @@ fun ProfileScreen(onLogout: () -> Unit = {}) {
                 // Personal Information Section
                 item {
                     ProfileSection(
-                        title = "Kişisel Bilgiler",
+                        title = "Personal Information",
                         items = listOf(
-                            ProfileItem("Yaş", "${userProfile.age}", Icons.Default.DateRange) {
+                            ProfileItem("Age", "${userProfile.age}", Icons.Default.DateRange) {
                                 editField = "age"
                                 editValue = userProfile.age.toString()
                                 showEditDialog = true
                             },
-                            ProfileItem("Cinsiyet", userProfile.gender.replaceFirstChar { 
-                                if (it == 'M' || it == 'm') 'E' else if (it == 'F' || it == 'f') 'K' else it.uppercaseChar() 
+                            ProfileItem("Gender", userProfile.gender.replaceFirstChar { 
+                                if (it == 'M' || it == 'm') 'M' else if (it == 'F' || it == 'f') 'F' else it.uppercaseChar() 
                             }, Icons.Default.Person) {
                                 editField = "gender"
                                 editValue = userProfile.gender
                                 showEditDialog = true
                             },
-                            ProfileItem("Konum", userProfile.location.ifEmpty { "Belirtilmemiş" }, Icons.Default.LocationOn) {
+                            ProfileItem("Location", userProfile.location.ifEmpty { "Not specified" }, Icons.Default.LocationOn) {
                                 editField = "location"
                                 editValue = userProfile.location
                                 showEditDialog = true
@@ -131,12 +140,12 @@ fun ProfileScreen(onLogout: () -> Unit = {}) {
                 // Contact Information Section
                 item {
                     ProfileSection(
-                        title = "İletişim Bilgileri",
+                        title = "Contact Information",
                         items = listOf(
-                            ProfileItem("E-posta", userProfile.email, Icons.Default.Email) {
+                            ProfileItem("Email", userProfile.email, Icons.Default.Email) {
                                 // Email değiştirme daha karmaşık - şimdilik disable
                             },
-                            ProfileItem("Telefon", userProfile.phoneNumber.ifEmpty { "Belirtilmemiş" }, Icons.Default.Phone) {
+                            ProfileItem("Phone", userProfile.phoneNumber.ifEmpty { "Not specified" }, Icons.Default.Phone) {
                                 editField = "phoneNumber"
                                 editValue = userProfile.phoneNumber
                                 showEditDialog = true
@@ -151,13 +160,19 @@ fun ProfileScreen(onLogout: () -> Unit = {}) {
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         ActionButton(
-                            text = "Şifre Değiştir",
+                            text = "Change Password",
                             icon = Icons.Default.Lock,
-                            onClick = { /* TODO: Implement password change */ }
+                            onClick = { 
+                                showPasswordDialog = true
+                                currentPassword = ""
+                                newPassword = ""
+                                confirmPassword = ""
+                                passwordError = null
+                            }
                         )
                         
                         ActionButton(
-                            text = "Çıkış Yap",
+                            text = "Logout",
                             icon = Icons.Default.Logout,
                             onClick = onLogout,
                             isDestructive = true
@@ -189,6 +204,46 @@ fun ProfileScreen(onLogout: () -> Unit = {}) {
                     }
                 }
                 showEditDialog = false
+            }
+        )
+    }
+    
+    // Password Change Dialog
+    if (showPasswordDialog) {
+        PasswordChangeDialog(
+            currentPassword = currentPassword,
+            newPassword = newPassword,
+            confirmPassword = confirmPassword,
+            errorMessage = passwordError,
+            isLoading = isChangingPassword,
+            onCurrentPasswordChange = { currentPassword = it },
+            onNewPasswordChange = { newPassword = it },
+            onConfirmPasswordChange = { confirmPassword = it },
+            onDismiss = { 
+                showPasswordDialog = false
+                passwordError = null
+            },
+            onConfirm = {
+                coroutineScope.launch {
+                    isChangingPassword = true
+                    passwordError = null
+                    
+                    changePassword(
+                        currentPassword = currentPassword,
+                        newPassword = newPassword,
+                        confirmPassword = confirmPassword
+                    ) { success, error ->
+                        isChangingPassword = false
+                        if (success) {
+                            showPasswordDialog = false
+                            currentPassword = ""
+                            newPassword = ""
+                            confirmPassword = ""
+                        } else {
+                            passwordError = error
+                        }
+                    }
+                }
             }
         )
     }
@@ -245,8 +300,8 @@ fun ProfileHeader(userProfile: UserProfile) {
             // Creation Date
             Text(
                 text = if (userProfile.createdAt > 0) {
-                    "Üye olma: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(userProfile.createdAt))}"
-                } else "Üye",
+                    "Member since: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(userProfile.createdAt))}"
+                } else "Member",
                 style = MaterialTheme.typography.bodyMedium,
                 color = AppOnSurface.copy(alpha = 0.7f)
             )
@@ -316,7 +371,7 @@ fun ProfileItemRow(item: ProfileItem) {
                 color = AppOnSurface.copy(alpha = 0.7f)
             )
             Text(
-                text = item.value.ifEmpty { "Belirtilmemiş" },
+                text = item.value.ifEmpty { "Not specified" },
                 style = MaterialTheme.typography.bodyMedium,
                 color = AppOnSurface
             )
@@ -324,7 +379,7 @@ fun ProfileItemRow(item: ProfileItem) {
         
         Icon(
             imageVector = Icons.Default.Edit,
-            contentDescription = "Düzenle",
+            contentDescription = "Edit",
             tint = BrandPrimaryBlue,
             modifier = Modifier.size(20.dp)
         )
@@ -391,7 +446,7 @@ fun EditFieldDialog(
                 modifier = Modifier.padding(24.dp)
             ) {
                 Text(
-                    text = "${getFieldDisplayName(fieldName)} Düzenle",
+                    text = "Edit ${getFieldDisplayName(fieldName)}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -419,7 +474,7 @@ fun EditFieldDialog(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("İptal")
+                        Text("Cancel")
                     }
                     
                     Button(
@@ -429,7 +484,7 @@ fun EditFieldDialog(
                             containerColor = BrandSecondaryGreen
                         )
                     ) {
-                        Text("Kaydet")
+                        Text("Save")
                     }
                 }
             }
@@ -456,10 +511,10 @@ private fun getInitials(fullName: String): String {
 
 private fun getFieldDisplayName(fieldName: String): String {
     return when (fieldName) {
-        "age" -> "Yaş"
-        "gender" -> "Cinsiyet"
-        "location" -> "Konum"
-        "phoneNumber" -> "Telefon"
+        "age" -> "Age"
+        "gender" -> "Gender"
+        "location" -> "Location"
+        "phoneNumber" -> "Phone"
         else -> fieldName
     }
 }
@@ -504,11 +559,11 @@ private suspend fun loadUserProfile(callback: (UserProfile?, String?) -> Unit) {
                 callback(profile, null)
             } else {
                 Log.e("ProfileScreen", "Document does not exist for user: ${user.uid}")
-                callback(null, "Profil bulunamadı")
+                callback(null, "Profile not found")
             }
         } else {
             Log.e("ProfileScreen", "User is null")
-            callback(null, "Kullanıcı oturum açmamış")
+            callback(null, "User not logged in")
         }
     } catch (e: Exception) {
         Log.e("ProfileScreen", "Error loading profile", e)
@@ -546,5 +601,229 @@ private suspend fun updateUserProfile(
     } catch (e: Exception) {
         Log.e("ProfileScreen", "Error updating profile", e)
         callback(false)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PasswordChangeDialog(
+    currentPassword: String,
+    newPassword: String,
+    confirmPassword: String,
+    errorMessage: String?,
+    isLoading: Boolean,
+    onCurrentPasswordChange: (String) -> Unit,
+    onNewPasswordChange: (String) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = AppSurface),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp)
+            ) {
+                Text(
+                    text = "Change Password",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = AppOnSurface
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Mevcut Şifre
+                OutlinedTextField(
+                    value = currentPassword,
+                    onValueChange = onCurrentPasswordChange,
+                    label = { Text("Enter Current Password") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading,
+                    isError = errorMessage != null,
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = BrandSecondaryGreen,
+                        focusedLabelColor = BrandSecondaryGreen
+                    ),
+                    trailingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Visibility,
+                            contentDescription = null,
+                            tint = AppOutline
+                        )
+                    }
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Yeni Şifre
+                OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = onNewPasswordChange,
+                    label = { Text("Enter New Password") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading,
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = BrandSecondaryGreen,
+                        focusedLabelColor = BrandSecondaryGreen
+                    ),
+                    trailingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Visibility,
+                            contentDescription = null,
+                            tint = AppOutline
+                        )
+                    }
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Yeni Şifre Tekrar
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = onConfirmPasswordChange,
+                    label = { Text("Confirm New Password") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading,
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = BrandSecondaryGreen,
+                        focusedLabelColor = BrandSecondaryGreen
+                    ),
+                    trailingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Visibility,
+                            contentDescription = null,
+                            tint = AppOutline
+                        )
+                    }
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Şifre Kuralları
+                Text(
+                    text = "Your new password must contain at least 10 characters and 2 letters.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AppOnSurface.copy(alpha = 0.7f)
+                )
+                
+                // Hata Mesajı
+                if (errorMessage != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = errorMessage,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = ErrorRed
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Butonlar
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    TextButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        enabled = !isLoading,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = BrandSecondaryGreen
+                        )
+                    ) {
+                        Text("CANCEL")
+                    }
+                    
+                    Button(
+                        onClick = onConfirm,
+                        modifier = Modifier.weight(1f),
+                        enabled = !isLoading && 
+                            currentPassword.isNotEmpty() && 
+                            newPassword.isNotEmpty() && 
+                            confirmPassword.isNotEmpty(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = BrandSecondaryGreen
+                        )
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = BrandOnSecondaryGreen
+                            )
+                        } else {
+                            Text("CHANGE", color = BrandOnSecondaryGreen)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private suspend fun changePassword(
+    currentPassword: String,
+    newPassword: String,
+    confirmPassword: String,
+    callback: (Boolean, String?) -> Unit
+) {
+    try {
+        // Validation kontrolü
+        if (newPassword != confirmPassword) {
+            callback(false, "New passwords do not match.")
+            return
+        }
+        
+        if (newPassword.length < 10) {
+            callback(false, "New password must be at least 10 characters.")
+            return
+        }
+        
+        val letterCount = newPassword.count { it.isLetter() }
+        if (letterCount < 2) {
+            callback(false, "New password must contain at least 2 letters.")
+            return
+        }
+        
+        val user = Firebase.auth.currentUser
+        if (user == null) {
+            callback(false, "User not logged in.")
+            return
+        }
+        
+        // Re-authentication için credential oluştur
+        val credential = com.google.firebase.auth.EmailAuthProvider.getCredential(
+            user.email ?: "",
+            currentPassword
+        )
+        
+        // Mevcut şifreyi doğrula
+        user.reauthenticate(credential).await()
+        
+        // Yeni şifreyi güncelle
+        user.updatePassword(newPassword).await()
+        
+        Log.d("ProfileScreen", "Password updated successfully")
+        callback(true, null)
+        
+    } catch (e: Exception) {
+        Log.e("ProfileScreen", "Error changing password", e)
+        val errorMessage = when {
+            e.message?.contains("wrong-password", ignoreCase = true) == true -> 
+                "Current password is incorrect."
+            e.message?.contains("weak-password", ignoreCase = true) == true -> 
+                "New password is too weak."
+            e.message?.contains("requires-recent-login", ignoreCase = true) == true -> 
+                "Please log in again for security reasons."
+            else -> "Password change failed: ${e.message}"
+        }
+        callback(false, errorMessage)
     }
 } 
