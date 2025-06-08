@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Patients collection - her kullanıcı sadece kendi belgesine erişebilir
+    match /patients/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Reports subcollection - her kullanıcı sadece kendi raporlarına erişebilir
+      match /reports/{reportId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // Genel kural: Kimse başka hiçbir yere erişemez
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 

@@ -27,86 +27,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.teduniversity.medicalai.ui.theme.*
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.*
 
-// ----------------------------------------------------
-// 1) CustomBottomBar: Pastel yeşil zemin ve yeşil vurgu
-// ----------------------------------------------------
-@Composable
-fun CustomBottomBar(
-    modifier: Modifier = Modifier,
-    selectedIndex: Int,
-    onItemSelected: (Int) -> Unit
-) {
-    // Home, Reports, Profile
-    val items = listOf(
-        Icons.Default.Home,
-        Icons.Default.ChatBubble,  // rapor ikonunu buraya da koyabilirsin
-        Icons.Default.Person
-    )
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .systemBarsPadding(),
-        contentAlignment = Alignment.BottomCenter
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Surface(
-                tonalElevation = 8.dp,
-                shape = RoundedCornerShape(32.dp),
-                color = SecondaryContainer,   // pastel yeşil zemin
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-            ) {
-                Row(
-                    Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    items.forEachIndexed { index, icon ->
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (selectedIndex == index)
-                                        BrandSecondaryGreen.copy(alpha = 0.2f)
-                                    else
-                                        Color.Transparent
-                                )
-                                .clickable { onItemSelected(index) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = null,
-                                tint = if (selectedIndex == index)
-                                    BrandSecondaryGreen       // seçili: parlak yeşil
-                                else
-                                    OnSecondaryContainer,     // seçilmemiş: koyu yeşil
-                                modifier = Modifier.size(28.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 // ----------------------------
-// 2) Model: Chat Geçmişi Verisi
+// 1) Model: Chat Geçmişi Verisi
 // ----------------------------
 data class ChatHistoryItem(
     val id: String,
@@ -116,7 +44,7 @@ data class ChatHistoryItem(
 )
 
 // ------------------------------------------------
-// 3) CTA Kart bileşeni: “New Chat with MedicalAI”
+// 2) CTA Kart bileşeni: "New Chat with MedicalAI"
 // ------------------------------------------------
 @Composable
 fun BigCTACard(
@@ -130,7 +58,7 @@ fun BigCTACard(
         shape = RoundedCornerShape(16.dp),
         onClick = onClick,
         colors = CardDefaults.cardColors(
-            containerColor = BrandPrimaryBlue  // derin mavi
+            containerColor = BrandSecondaryGreen  // yeşil renk
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -140,8 +68,8 @@ fun BigCTACard(
                 .background(
                     Brush.horizontalGradient(
                         colors = listOf(
-                            BrandPrimaryBlue,
-                            BrandPrimaryBlue.copy(alpha = 0.85f)
+                            BrandSecondaryGreen,
+                            BrandSecondaryGreen.copy(alpha = 0.85f)
                         )
                     )
                 )
@@ -155,13 +83,13 @@ fun BigCTACard(
                     Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(BrandOnPrimaryBlue.copy(alpha = 0.2f)),
+                        .background(BrandOnSecondaryGreen.copy(alpha = 0.2f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = null,
-                        tint = BrandOnPrimaryBlue
+                        tint = BrandOnSecondaryGreen
                     )
                 }
                 Spacer(Modifier.width(12.dp))
@@ -174,7 +102,7 @@ fun BigCTACard(
                     Text(
                         text = "NEW CHAT WITH MEDICALAI",
                         style = MaterialTheme.typography.titleMedium.copy(
-                            color = BrandOnPrimaryBlue,
+                            color = BrandOnSecondaryGreen,
                             fontWeight = FontWeight.SemiBold
                         )
                     )
@@ -182,7 +110,7 @@ fun BigCTACard(
                     Text(
                         text = "Disease Prediction",
                         style = MaterialTheme.typography.bodySmall.copy(
-                            color = BrandOnPrimaryBlue.copy(alpha = 0.9f)
+                            color = BrandOnSecondaryGreen.copy(alpha = 0.9f)
                         )
                     )
                 }
@@ -192,7 +120,7 @@ fun BigCTACard(
 }
 
 // ------------------------------------------------
-// 4) Chat Geçmişi Satırı bileşeni
+// 3) Chat Geçmişi Satırı bileşeni
 // ------------------------------------------------
 @Composable
 fun ChatHistoryRow(
@@ -220,7 +148,7 @@ fun ChatHistoryRow(
             Icon(
                 imageVector = Icons.Default.ChatBubble,
                 contentDescription = null,
-                tint = BrandPrimaryBlue,  // mavi vurgu
+                tint = BrandSecondaryGreen,  // yeşil renk
                 modifier = Modifier.size(28.dp)
             )
             Spacer(Modifier.width(10.dp))
@@ -250,7 +178,7 @@ fun ChatHistoryRow(
 }
 
 // ------------------------------------------------
-// 5) HomeScreen bileşeni
+// 4) HomeScreen bileşeni
 // ------------------------------------------------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -261,18 +189,59 @@ fun HomeScreen(
     onProfileClick: () -> Unit,
     onOpenChatHistory: (ChatHistoryItem) -> Unit
 ) {
-    // Kullanıcı adı
-    val user = Firebase.auth.currentUser
-    val rawName = when {
-        !user?.displayName.isNullOrBlank() -> user!!.displayName!!
-        !user?.email.isNullOrBlank() && user!!.email!!.contains("@") -> user.email!!.substringBefore("@")
-        else -> "User"
+    // State for user information
+    var displayName by remember { mutableStateOf("User") }
+    var isLoading by remember { mutableStateOf(true) }
+    
+    // Firebase user bilgilerini al
+    LaunchedEffect(Unit) {
+        val user = Firebase.auth.currentUser
+        if (user != null) {
+            try {
+                // Önce Firestore'dan kullanıcı bilgilerini al
+                val firestore = Firebase.firestore
+                val userDoc = firestore.collection("patients")
+                    .document(user.uid)
+                    .get()
+                    .await()
+                
+                displayName = when {
+                    // Firestore'dan first_name ve last_name al
+                    userDoc.exists() -> {
+                        val firstName = userDoc.getString("first_name") ?: ""
+                        val lastName = userDoc.getString("last_name") ?: ""
+                        val fullName = userDoc.getString("full_name") ?: ""
+                        
+                        when {
+                            fullName.isNotBlank() -> fullName.trim()
+                            firstName.isNotBlank() && lastName.isNotBlank() -> "$firstName $lastName".trim()
+                            firstName.isNotBlank() -> firstName.trim()
+                            lastName.isNotBlank() -> lastName.trim()
+                            else -> {
+                                // Firestore'da isim yoksa Auth'dan al
+                                getNameFromAuth(user)
+                            }
+                        }
+                    }
+                    else -> getNameFromAuth(user)
+                }
+                
+                // İlk harfi büyük yap
+                displayName = displayName.split(" ").joinToString(" ") { word ->
+                    word.replaceFirstChar { 
+                        if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() 
+                    }
+                }
+                
+            } catch (e: Exception) {
+                // Hata durumunda Auth'dan al
+                displayName = getNameFromAuth(user)
+            }
+        } else {
+            displayName = "Guest"
+        }
+        isLoading = false
     }
-    val displayName = rawName.replaceFirstChar {
-        if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
-    }
-
-    var bottomSelectedIndex by remember { mutableStateOf(0) }
 
     val sampleHistory = remember {
         listOf(
@@ -295,41 +264,35 @@ fun HomeScreen(
         topBar = {
             MediumTopAppBar(
                 title = {
-                    Text(
-                        text = "Welcome, $displayName",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = BrandOnSecondaryGreen
-                    )
+                    if (isLoading) {
+                        Text(
+                            text = "Welcome...",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = BrandOnPrimaryBlue
+                        )
+                    } else {
+                        Text(
+                            text = "Welcome, $displayName",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = BrandOnPrimaryBlue
+                        )
+                    }
                 },
                 actions = {
                     IconButton(onClick = onNotificationClick) {
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = "Notifications",
-                            tint = BrandOnSecondaryGreen
+                            tint = BrandOnPrimaryBlue
                         )
                     }
                 },
                 colors = TopAppBarDefaults.mediumTopAppBarColors(
-                    containerColor = BrandSecondaryGreen
+                    containerColor = BrandPrimaryBlue
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
-            )
-        },
-
-        bottomBar = {
-            CustomBottomBar(
-                selectedIndex = bottomSelectedIndex,
-                onItemSelected = { idx ->
-                    bottomSelectedIndex = idx
-                    when (idx) {
-                        0 -> { /* Home */ }
-                        1 -> onReportClick()
-                        2 -> onProfileClick()
-                    }
-                }
             )
         }
     ) { innerPadding ->
@@ -380,5 +343,18 @@ fun HomeScreen(
                 }
             }
         }
+    }
+}
+
+// Helper function to get name from Firebase Auth
+private fun getNameFromAuth(user: com.google.firebase.auth.FirebaseUser): String {
+    return when {
+        !user.displayName.isNullOrBlank() -> {
+            user.displayName!!.trim()
+        }
+        !user.email.isNullOrBlank() && user.email!!.contains("@") -> {
+            user.email!!.substringBefore("@").trim()
+        }
+        else -> "User"
     }
 }
