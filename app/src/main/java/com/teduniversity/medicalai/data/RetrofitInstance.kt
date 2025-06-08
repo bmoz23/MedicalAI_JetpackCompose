@@ -10,11 +10,11 @@ object RetrofitInstance {
     // For emulator use 10.0.2.2 instead of localhost
     private const val BASE_URL = "http://10.0.2.2:8000/"
 
-    // Configure custom OkHttpClient with extended timeouts
+    // Configure custom OkHttpClient with extended timeouts for multiagent system
     private val okHttpClient = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)  // Time to establish connection
-        .readTimeout(60, TimeUnit.SECONDS)     // Time to read response
-        .writeTimeout(30, TimeUnit.SECONDS)    // Time to write request
+        .connectTimeout(60, TimeUnit.SECONDS)   // Time to establish connection
+        .readTimeout(300, TimeUnit.SECONDS)     // Time to read response (5 minutes for agents)
+        .writeTimeout(60, TimeUnit.SECONDS)     // Time to write request
         .build()
 
     val api: ChatApiService by lazy {

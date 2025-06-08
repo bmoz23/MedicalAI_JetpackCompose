@@ -55,9 +55,17 @@ class ChatViewModel(
                 )
                 _messages.value = listOf(botMessage)
             } catch (e: Exception) {
+                val errorText = when {
+                    e.message?.contains("timeout", ignoreCase = true) == true -> 
+                        "Initializing agents... This might take a moment. Please wait."
+                    e.message?.contains("failed to connect", ignoreCase = true) == true -> 
+                        "Connection failed. Please check your network."
+                    else -> "Failed to initialize chat: ${e.message}"
+                }
+                
                 val errorMsg = ChatMessage(
                     id = UUID.randomUUID().toString(),
-                    text = "Failed to initialize chat: ${e.message}",
+                    text = errorText,
                     isMine = false,
                     timestamp = Date()
                 )
@@ -116,9 +124,17 @@ class ChatViewModel(
                 _messages.value = _messages.value + botMessage
 
             } catch (e: Exception) {
+                val errorText = when {
+                    e.message?.contains("timeout", ignoreCase = true) == true -> 
+                        "Agents are thinking... This might take a moment. Please wait."
+                    e.message?.contains("failed to connect", ignoreCase = true) == true -> 
+                        "Connection failed. Please check your network."
+                    else -> "Failed to send message: ${e.message}"
+                }
+                
                 val errorMsg = ChatMessage(
                     id = UUID.randomUUID().toString(),
-                    text = "Failed to send message: ${e.message}",
+                    text = errorText,
                     isMine = false,
                     timestamp = Date()
                 )
