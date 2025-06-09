@@ -13,8 +13,9 @@ data class ChatRequest(
 
 /**
  * API'den dönen cevap:
- * { "question": "Bot's question" }
+ * { "question": "Bot's question", "report_created": false }
  */
 data class ChatResponse(
-    @SerializedName("question") val question: String
+    @SerializedName("question") val question: String,
+    @SerializedName("report_created") val reportCreated: Boolean = false
 )

@@ -1,6 +1,7 @@
 package com.teduniversity.medicalai.viewmodel
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teduniversity.medicalai.model.Report
@@ -31,14 +32,18 @@ class ReportsViewModel : ViewModel() {
     }
 
     fun loadReports() {
+        Log.d("ReportsViewModel", "loadReports() called")
         viewModelScope.launch {
             try {
                 _isLoading.value = true
                 _error.value = null
+                Log.d("ReportsViewModel", "Loading reports from repository")
                 repository.getUserReports().collect { reports ->
+                    Log.d("ReportsViewModel", "Reports loaded: ${reports.size} reports found")
                     _reports.value = reports.sortedByDescending { it.lastModified }
                 }
             } catch (e: Exception) {
+                Log.e("ReportsViewModel", "Error loading reports: ${e.message}", e)
                 _error.value = e
             } finally {
                 _isLoading.value = false
@@ -51,10 +56,10 @@ class ReportsViewModel : ViewModel() {
             try {
                 _downloadStatus.value = "Downloading ${report.fileName}..."
                 downloadHelper?.downloadAndOpenPdf(report.imageUrl, report.fileName)
-                _downloadStatus.value = "Download started successfully"
+                _downloadStatus.value = "Download started - will open automatically when complete"
                 
-                // Clear status after 3 seconds
-                kotlinx.coroutines.delay(3000)
+                // Clear status after 4 seconds
+                kotlinx.coroutines.delay(4000)
                 _downloadStatus.value = null
             } catch (e: Exception) {
                 _downloadStatus.value = "Download failed: ${e.message}"
