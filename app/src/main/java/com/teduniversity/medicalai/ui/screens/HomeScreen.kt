@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.teduniversity.medicalai.ui.theme.*
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
@@ -32,6 +33,9 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.teduniversity.medicalai.viewmodel.NotificationViewModel
+import android.util.Log
 
 // ----------------------------
 // 1) Model: Chat Geçmişi Verisi
@@ -193,6 +197,10 @@ fun HomeScreen(
     var displayName by remember { mutableStateOf("User") }
     var isLoading by remember { mutableStateOf(true) }
     
+    // Notification ViewModel
+    val notificationViewModel: NotificationViewModel = viewModel()
+    val unreadCount by notificationViewModel.unreadCount.collectAsState()
+
     // Firebase user bilgilerini al
     LaunchedEffect(Unit) {
         val user = Firebase.auth.currentUser
@@ -279,12 +287,33 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onNotificationClick) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Notifications",
-                            tint = BrandOnPrimaryBlue
-                        )
+                    Box {
+                        IconButton(onClick = onNotificationClick) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Notifications",
+                                tint = BrandOnPrimaryBlue
+                            )
+                        }
+                        
+                        // Badge for unread notifications
+                        if (unreadCount > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .offset(x = (-8).dp, y = 8.dp)
+                                    .size(18.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Red),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (unreadCount > 9) "9+" else unreadCount.toString(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White,
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.mediumTopAppBarColors(

@@ -19,6 +19,7 @@ import com.teduniversity.medicalai.ui.screens.LoginScreen
 import com.teduniversity.medicalai.ui.screens.MainScreen
 import com.teduniversity.medicalai.ui.screens.ReportsScreen
 import com.teduniversity.medicalai.ui.screens.SignUpScreen
+import com.teduniversity.medicalai.ui.screens.NotificationScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,7 +98,12 @@ fun AppNavHost() {
                     startDestination = "main"
                 ) {
                     composable("main") {
-                        MainScreen(onLogout = logout)
+                        MainScreen(
+                            onLogout = logout,
+                            onNotificationClick = {
+                                navController.navigate("notifications")
+                            }
+                        )
                     }
 
                     composable("reports") {
@@ -105,7 +111,9 @@ fun AppNavHost() {
                     }
 
                     composable("notifications") {
-                        /* TODO: NotificationScreen() */
+                        NotificationScreen(
+                            onBackClick = { navController.popBackStack() }
+                        )
                     }
 
                     composable("profile") {

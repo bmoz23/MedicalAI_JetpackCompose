@@ -9,5 +9,6 @@ data class Report(
     val imageUrl: String = "",
     val fileName: String = "",
     val fileSize: Long = 0,
-    val lastModified: Long = 0
+    val lastModified: Long = 0,
+    val reviewed: Boolean = false
 ) 
