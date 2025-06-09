@@ -1,5 +1,6 @@
 package com.teduniversity.medicalai.ui.screens
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,7 +15,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -29,13 +32,14 @@ import java.util.*
 @Composable
 fun ChatScreenWithViewModel(
     onBack: () -> Unit,
+    onReportCreated: (() -> Unit)? = null,
     viewModel: ChatViewModel = viewModel(
         factory = object : androidx.lifecycle.ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
                 // ChatApiService'i kullanarak ChatViewModel örneği oluşturuyoruz
                 val apiService = com.teduniversity.medicalai.data.RetrofitInstance.api
-                return ChatViewModel(apiService) as T
+                return ChatViewModel(apiService, onReportCreated) as T
             }
         }
     )
@@ -92,18 +96,7 @@ fun ChatScreenWithViewModel(
                 // Show typing indicator when loading
                 if (isLoading && messages.isNotEmpty()) {
                     item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = MaterialTheme.colorScheme.primary,
-                                strokeWidth = 2.dp
-                            )
-                        }
+                        AgentThinkingIndicator()
                     }
                 }
             }
@@ -211,6 +204,78 @@ private fun ChatBubble(message: ChatViewModel.ChatMessage) {
                     )
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun AgentThinkingIndicator() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.Start
+    ) {
+        Surface(
+            tonalElevation = 0.dp,
+            shape = MaterialTheme.shapes.large,
+            color = com.teduniversity.medicalai.ui.theme.SecondaryContainer,
+            contentColor = com.teduniversity.medicalai.ui.theme.OnSecondaryContainer,
+            modifier = Modifier
+                .widthIn(max = 200.dp)
+                .padding(horizontal = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = "Agent is thinking",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
+                    color = com.teduniversity.medicalai.ui.theme.OnSecondaryContainer.copy(alpha = 0.8f)
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Animasyonlu typing dots
+                TypingDotsAnimation()
+            }
+        }
+    }
+}
+
+@Composable
+private fun TypingDotsAnimation() {
+    val infiniteTransition = rememberInfiniteTransition(label = "typing_animation")
+    
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(3) { index ->
+            val animationDelay = index * 200
+            val scale by infiniteTransition.animateFloat(
+                initialValue = 0.5f,
+                targetValue = 1.2f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 600,
+                        delayMillis = animationDelay,
+                        easing = EaseInOutBounce
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "dot_scale_$index"
+            )
+            
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .scale(scale)
+                    .clip(CircleShape)
+                    .background(com.teduniversity.medicalai.ui.theme.BrandSecondaryGreen)
+            )
         }
     }
 }

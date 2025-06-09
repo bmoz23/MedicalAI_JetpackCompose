@@ -1,9 +1,10 @@
 package com.teduniversity.medicalai.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChatBubble
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -18,7 +19,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.teduniversity.medicalai.ui.theme.*
+import com.teduniversity.medicalai.viewmodel.ReportsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,6 +29,9 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    
+    // Create ReportsViewModel instance to share between screens
+    val reportsViewModel: ReportsViewModel = viewModel()
 
     // Chat ekranında bottom bar gizlenmeli
     if (currentRoute == "chat") {
@@ -59,12 +65,17 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             
             composable("chat") {
                 ChatScreenWithViewModel(
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onReportCreated = {
+                        // Refresh reports when a new report is created
+                        Log.d("MainScreen", "onReportCreated callback triggered - refreshing reports")
+                        reportsViewModel.loadReports()
+                    }
                 )
             }
             
             composable("reports") {
-                ReportsScreen()
+                ReportsScreen(viewModel = reportsViewModel)
             }
             
             composable("profile") {
@@ -72,7 +83,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             }
         }
     } else {
-        // Normal ekranlar için bottom bar ile scaffold
+        // Ana ekranlar için bottom bar ile scaffold
         Scaffold(
             bottomBar = {
                 CustomBottomBar(
@@ -83,23 +94,20 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         else -> 0
                     },
                     onItemSelected = { index ->
-                        when (index) {
-                            0 -> navController.navigate("home") {
-                                popUpTo(navController.graph.startDestinationId)
-                                launchSingleTop = true
-                            }
-                            1 -> navController.navigate("reports") {
-                                popUpTo(navController.graph.startDestinationId)
-                                launchSingleTop = true
-                            }
-                            2 -> navController.navigate("profile") {
-                                popUpTo(navController.graph.startDestinationId)
-                                launchSingleTop = true
-                            }
+                        val destination = when (index) {
+                            0 -> "home"
+                            1 -> "reports"
+                            2 -> "profile"
+                            else -> "home"
+                        }
+                        navController.navigate(destination) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
                         }
                     }
                 )
-            }
+            },
+            containerColor = AppBackground
         ) { innerPadding ->
             NavHost(
                 navController = navController,
@@ -130,12 +138,17 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 
                 composable("chat") {
                     ChatScreenWithViewModel(
-                        onBack = { navController.popBackStack() }
+                        onBack = { navController.popBackStack() },
+                        onReportCreated = {
+                            // Refresh reports when a new report is created
+                            Log.d("MainScreen", "onReportCreated callback triggered - refreshing reports")
+                            reportsViewModel.loadReports()
+                        }
                     )
                 }
                 
                 composable("reports") {
-                    ReportsScreen()
+                    ReportsScreen(viewModel = reportsViewModel)
                 }
                 
                 composable("profile") {
@@ -155,7 +168,7 @@ fun CustomBottomBar(
     // Home, Reports, Profile
     val items = listOf(
         BottomBarItem(Icons.Default.Home, "Home"),
-        BottomBarItem(Icons.Default.ChatBubble, "Reports"),  
+        BottomBarItem(Icons.Default.Description, "Reports"),  
         BottomBarItem(Icons.Default.Person, "Profile")
     )
 

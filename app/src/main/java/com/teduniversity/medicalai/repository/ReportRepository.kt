@@ -1,5 +1,6 @@
 package com.teduniversity.medicalai.repository
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
@@ -18,6 +19,7 @@ class ReportRepository {
     suspend fun getUserReports(): Flow<List<Report>> = flow {
         try {
             val userId = auth.currentUser?.uid ?: throw Exception("User not authenticated")
+            Log.d("ReportRepository", "Loading reports for user: $userId")
             
             // Storage'dan dosya listesini al
             val storageRef = storage.reference
@@ -25,12 +27,16 @@ class ReportRepository {
                 .child(userId)
                 .child("reports")
             
+            Log.d("ReportRepository", "Checking Firebase Storage path: patients/$userId/reports")
             val listResult = storageRef.listAll().await()
+            Log.d("ReportRepository", "Found ${listResult.items.size} files in Firebase Storage")
+            
             val reports = mutableListOf<Report>()
             
             // Her dosya için metadata'yı al ve Report objesi oluştur
             for (item in listResult.items) {
                 try {
+                    Log.d("ReportRepository", "Processing file: ${item.name}")
                     val metadata = item.metadata.await()
                     val downloadUrl = item.downloadUrl.await().toString()
                     val fileName = item.name
@@ -54,14 +60,18 @@ class ReportRepository {
                     )
                     
                     reports.add(report)
+                    Log.d("ReportRepository", "Added report: ${report.title}")
                 } catch (e: Exception) {
+                    Log.e("ReportRepository", "Error processing file ${item.name}: ${e.message}")
                     // Tek dosya hatası tüm listeyi bozmasın
                     continue
                 }
             }
             
+            Log.d("ReportRepository", "Successfully loaded ${reports.size} reports")
             emit(reports)
         } catch (e: Exception) {
+            Log.e("ReportRepository", "Error getting user reports: ${e.message}", e)
             throw e
         }
     }
