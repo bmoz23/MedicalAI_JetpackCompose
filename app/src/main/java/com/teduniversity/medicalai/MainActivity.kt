@@ -10,6 +10,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.teduniversity.medicalai.ui.navigation.AppNavHost
 import com.teduniversity.medicalai.ui.theme.MedicalAITheme
 import com.google.firebase.FirebaseApp
+import com.teduniversity.medicalai.repository.NotificationRepository
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 
 @ExperimentalMaterial3Api
@@ -22,10 +25,19 @@ class MainActivity : ComponentActivity() {
         //    Eğer bunu koymazsak Compose içeriği çubukların altına çizilmez.
         enableEdgeToEdge()
 
-        // 2) Firebase’in initialize edilmesi:
+        // 2) Firebase'in initialize edilmesi:
         FirebaseApp.initializeApp(this)
 
-        // 3) setContent içinde tema ve NavHost’u yükle:
+        // 3) Authentication listener ekleme - User login olduğunda notification monitoring başlatılır
+        Firebase.auth.addAuthStateListener { firebaseAuth ->
+            if (firebaseAuth.currentUser != null) {
+                // Her auth state değişikliğinde repository'yi initialize et
+                // Bu, user değişikliklerini otomatik olarak handle eder
+                NotificationRepository.getInstance().initialize()
+            }
+        }
+
+        // 4) setContent içinde tema ve NavHost'u yükle:
         setContent {
             MedicalAITheme(dynamicColor = false) {
                 AppNavHost()

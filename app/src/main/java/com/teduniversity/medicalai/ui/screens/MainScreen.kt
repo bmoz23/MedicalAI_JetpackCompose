@@ -25,7 +25,10 @@ import com.teduniversity.medicalai.viewmodel.ReportsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(onLogout: () -> Unit = {}) {
+fun MainScreen(
+    onLogout: () -> Unit = {},
+    onNotificationClick: () -> Unit = {}
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -43,7 +46,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
         ) {
             composable("home") {
                 HomeScreen(
-                    onNotificationClick = { /* TODO */ },
+                    onNotificationClick = onNotificationClick,
                     onNewChatClick = { 
                         navController.navigate("chat")
                     },
@@ -116,7 +119,7 @@ fun MainScreen(onLogout: () -> Unit = {}) {
             ) {
                 composable("home") {
                     HomeScreen(
-                        onNotificationClick = { /* TODO */ },
+                        onNotificationClick = onNotificationClick,
                         onNewChatClick = { 
                             navController.navigate("chat")
                         },
