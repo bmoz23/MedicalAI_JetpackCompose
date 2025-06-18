@@ -58,26 +58,27 @@ fun BigCTACard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(140.dp),
-        shape = RoundedCornerShape(16.dp),
+            .height(160.dp),
+        shape = RoundedCornerShape(24.dp),
         onClick = onClick,
         colors = CardDefaults.cardColors(
-            containerColor = BrandSecondaryGreen  // yeşil renk
+            containerColor = Color.Transparent
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
-                    Brush.horizontalGradient(
+                    Brush.verticalGradient(
                         colors = listOf(
                             BrandSecondaryGreen,
-                            BrandSecondaryGreen.copy(alpha = 0.85f)
+                            BrandSecondaryGreen.copy(alpha = 0.9f),
+                            BrandSecondaryGreen.copy(alpha = 0.8f)
                         )
                     )
                 )
-                .padding(16.dp)
+                .padding(20.dp)
         ) {
             Row(
                 Modifier.fillMaxSize(),
@@ -85,38 +86,67 @@ fun BigCTACard(
             ) {
                 Box(
                     Modifier
-                        .size(36.dp)
+                        .size(52.dp)
                         .clip(CircleShape)
-                        .background(BrandOnSecondaryGreen.copy(alpha = 0.2f)),
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    BrandOnSecondaryGreen.copy(alpha = 0.3f),
+                                    BrandOnSecondaryGreen.copy(alpha = 0.1f)
+                                )
+                            )
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = null,
-                        tint = BrandOnSecondaryGreen
+                        tint = BrandOnSecondaryGreen,
+                        modifier = Modifier.size(28.dp)
                     )
                 }
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(16.dp))
                 Column(
                     Modifier
                         .fillMaxWidth()
                         .padding(end = 8.dp),
-                    horizontalAlignment = Alignment.End
+                    horizontalAlignment = Alignment.Start
                 ) {
                     Text(
-                        text = "NEW CHAT WITH MEDICALAI",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            color = BrandOnSecondaryGreen,
-                            fontWeight = FontWeight.SemiBold
+                        text = "NEW CHAT WITH",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = BrandOnSecondaryGreen.copy(alpha = 0.9f),
+                            fontWeight = FontWeight.Medium,
+                            letterSpacing = 1.2.sp
                         )
                     )
-                    Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "Disease Prediction",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = BrandOnSecondaryGreen.copy(alpha = 0.9f)
+                        text = "MEDICALAI",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            color = BrandOnSecondaryGreen,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
                         )
                     )
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(BrandOnSecondaryGreen.copy(alpha = 0.8f))
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "Disease Prediction & Health Analysis",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = BrandOnSecondaryGreen.copy(alpha = 0.9f),
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -135,48 +165,100 @@ fun ChatHistoryRow(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .padding(vertical = 4.dp)
+            .height(80.dp)
+            .padding(vertical = 6.dp)
             .clickable { onClick(item) },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = AppSurface),  // beyaz yüzey
-        border = BorderStroke(1.dp, AppOutline),                       // gri outline
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = AppSurface.copy(alpha = 0.95f)
+        ),
+        border = BorderStroke(
+            1.dp, 
+            Brush.horizontalGradient(
+                colors = listOf(
+                    BrandSecondaryGreen.copy(alpha = 0.3f),
+                    BrandPrimaryBlue.copy(alpha = 0.2f)
+                )
+            )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Row(
             Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            AppSurface,
+                            AppSurface.copy(alpha = 0.98f)
+                        )
+                    )
+                )
+                .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Default.ChatBubble,
-                contentDescription = null,
-                tint = BrandSecondaryGreen,  // yeşil renk
-                modifier = Modifier.size(28.dp)
-            )
-            Spacer(Modifier.width(10.dp))
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                BrandSecondaryGreen.copy(alpha = 0.15f),
+                                BrandSecondaryGreen.copy(alpha = 0.05f)
+                            )
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ChatBubble,
+                    contentDescription = null,
+                    tint = BrandSecondaryGreen,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = item.title,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.3.sp
+                    ),
                     color = AppOnSurface
                 )
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(4.dp))
                 Text(
                     text = item.lastMessage,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        letterSpacing = 0.2.sp
+                    ),
                     color = AppOnSurface.copy(alpha = 0.7f),
                     maxLines = 1
                 )
             }
-            Text(
-                text = remember(item.timestamp) {
-                    SimpleDateFormat("HH:mm", Locale.getDefault()).format(item.timestamp)
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = AppOnSurface.copy(alpha = 0.7f)
-            )
+            Spacer(Modifier.width(8.dp))
+            Column(
+                horizontalAlignment = Alignment.End
+            ) {
+                Text(
+                    text = remember(item.timestamp) {
+                        SimpleDateFormat("HH:mm", Locale.getDefault()).format(item.timestamp)
+                    },
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Medium
+                    ),
+                    color = BrandPrimaryBlue.copy(alpha = 0.8f)
+                )
+                Spacer(Modifier.height(2.dp))
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(BrandSecondaryGreen.copy(alpha = 0.6f))
+                )
+            }
         }
     }
 }
@@ -272,45 +354,79 @@ fun HomeScreen(
         topBar = {
             MediumTopAppBar(
                 title = {
-                    if (isLoading) {
-                        Text(
-                            text = "Welcome...",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = BrandOnPrimaryBlue
-                        )
-                    } else {
-                        Text(
-                            text = "Welcome, $displayName",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = BrandOnPrimaryBlue
-                        )
+                    Column {
+                        if (isLoading) {
+                            Text(
+                                text = "Welcome...",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.5.sp
+                                ),
+                                color = BrandOnPrimaryBlue
+                            )
+                        } else {
+                            Text(
+                                text = "Welcome Back,",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    letterSpacing = 0.3.sp
+                                ),
+                                color = BrandOnPrimaryBlue.copy(alpha = 0.9f)
+                            )
+                            Text(
+                                text = displayName,
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.5.sp
+                                ),
+                                color = BrandOnPrimaryBlue
+                            )
+                        }
                     }
                 },
                 actions = {
                     Box {
-                        IconButton(onClick = onNotificationClick) {
-                            Icon(
-                                imageVector = Icons.Default.Notifications,
-                                contentDescription = "Notifications",
-                                tint = BrandOnPrimaryBlue
-                            )
+                        Card(
+                            shape = CircleShape,
+                            colors = CardDefaults.cardColors(
+                                containerColor = BrandOnPrimaryBlue.copy(alpha = 0.1f)
+                            ),
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            IconButton(onClick = onNotificationClick) {
+                                Icon(
+                                    imageVector = Icons.Default.Notifications,
+                                    contentDescription = "Notifications",
+                                    tint = BrandOnPrimaryBlue,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                         }
                         
                         // Badge for unread notifications
                         if (unreadCount > 0) {
                             Box(
                                 modifier = Modifier
-                                    .offset(x = (-8).dp, y = 8.dp)
-                                    .size(18.dp)
+                                    .offset(x = (-6).dp, y = 6.dp)
+                                    .size(20.dp)
                                     .clip(CircleShape)
-                                    .background(Color.Red),
+                                    .background(
+                                        Brush.radialGradient(
+                                            colors = listOf(
+                                                Color(0xFFFF4444),
+                                                Color(0xFFCC0000)
+                                            )
+                                        )
+                                    ),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = if (unreadCount > 9) "9+" else unreadCount.toString(),
-                                    style = MaterialTheme.typography.labelSmall,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold
+                                    ),
                                     color = Color.White,
-                                    fontSize = 10.sp
+                                    fontSize = 11.sp
                                 )
                             }
                         }
@@ -321,7 +437,14 @@ fun HomeScreen(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                BrandPrimaryBlue,
+                                BrandPrimaryBlue.copy(alpha = 0.95f)
+                            )
+                        )
+                    )
             )
         }
     ) { innerPadding ->
@@ -329,31 +452,65 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 16.dp)
+                .padding(horizontal = 20.dp, vertical = 24.dp)
         ) {
             BigCTACard(onClick = onNewChatClick)
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(32.dp))
 
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = BrandPrimaryBlue.copy(alpha = 0.05f)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
-                Text(
-                    text = "Chat Histories",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = AppOnBackground
-                )
-                Spacer(Modifier.weight(1f))
-                Text(
-                    text = "See All",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        color = BrandPrimaryBlue,
-                        fontWeight = FontWeight.Medium
-                    ),
-                    modifier = Modifier.clickable { /* See All */ }
-                )
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(BrandPrimaryBlue)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            text = "Chat Histories",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp
+                            ),
+                            color = AppOnBackground
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Card(
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = BrandPrimaryBlue.copy(alpha = 0.1f)
+                        ),
+                        modifier = Modifier.clickable { /* See All */ }
+                    ) {
+                        Text(
+                            text = "See All",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = BrandPrimaryBlue,
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = 0.3.sp
+                            ),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
+                }
             }
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
 
             val listState: LazyListState = rememberLazyListState()
             LazyColumn(
@@ -361,8 +518,8 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                verticalArrangement = Arrangement.Top,
-                contentPadding = PaddingValues(bottom = 16.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                contentPadding = PaddingValues(bottom = 24.dp)
             ) {
                 items(sampleHistory) { chatItem ->
                     ChatHistoryRow(
