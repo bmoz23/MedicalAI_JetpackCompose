@@ -55,12 +55,17 @@ class ReportsViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 _downloadStatus.value = "Downloading ${report.fileName}..."
+                
+                // Download helper'ı çağır - bu asenkron çalışır
                 downloadHelper?.downloadAndOpenPdf(report.imageUrl, report.fileName)
+                
+                // Download başladığını göster
                 _downloadStatus.value = "Download started - will open automatically when complete"
                 
-                // Clear status after 4 seconds
-                kotlinx.coroutines.delay(4000)
+                // 3 saniye sonra status'u temizle
+                kotlinx.coroutines.delay(3000)
                 _downloadStatus.value = null
+                
             } catch (e: Exception) {
                 _downloadStatus.value = "Download failed: ${e.message}"
                 kotlinx.coroutines.delay(3000)
