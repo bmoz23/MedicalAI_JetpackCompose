@@ -121,7 +121,7 @@ fun BigCTACard(
                         )
                     )
                     Text(
-                        text = "MEDICALAI",
+                        text = "MedicalAI",
                         style = MaterialTheme.typography.titleLarge.copy(
                             color = BrandOnSecondaryGreen,
                             fontWeight = FontWeight.Bold,

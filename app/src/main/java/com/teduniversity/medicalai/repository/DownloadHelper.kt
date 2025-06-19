@@ -31,40 +31,32 @@ class DownloadHelper(private val context: Context) {
                 setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, cleanFileName)
                 setMimeType("application/pdf")
+                setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE)
+                setAllowedOverRoaming(false)
             }
             
             val downloadId = downloadManager.enqueue(request)
+            
+            // Önceki receiver varsa unregister et
+            downloadReceiver?.let { receiver ->
+                try {
+                    context.unregisterReceiver(receiver)
+                } catch (e: Exception) {
+                    // Already unregistered
+                }
+            }
             
             // Download tamamlandığında otomatik açma için BroadcastReceiver
             downloadReceiver = object : BroadcastReceiver() {
                 override fun onReceive(context: Context, intent: Intent) {
                     val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
                     if (id == downloadId) {
-                        // Download tamamlandı, dosya durumunu kontrol et
-                        val query = DownloadManager.Query()
-                        query.setFilterById(downloadId)
-                        val cursor: Cursor = downloadManager.query(query)
-                        
-                        if (cursor.moveToFirst()) {
-                            val columnIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
-                            if (columnIndex >= 0) {
-                                when (cursor.getInt(columnIndex)) {
-                                    DownloadManager.STATUS_SUCCESSFUL -> {
-                                        // İndirme başarılı, PDF'i aç
-                                        openPdfFile(cleanFileName)
-                                        Toast.makeText(context, "Opening PDF...", Toast.LENGTH_SHORT).show()
-                                    }
-                                    DownloadManager.STATUS_FAILED -> {
-                                        Toast.makeText(context, "Download failed", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                            }
-                        }
-                        cursor.close()
+                        checkDownloadStatusAndOpen(downloadManager, downloadId, cleanFileName)
                         
                         // Receiver'ı unregister et
                         try {
                             context.unregisterReceiver(this)
+                            downloadReceiver = null
                         } catch (e: Exception) {
                             // Already unregistered
                         }
@@ -74,11 +66,68 @@ class DownloadHelper(private val context: Context) {
             
             // Receiver'ı register et
             val filter = IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
-            context.registerReceiver(downloadReceiver, filter)
+            try {
+                context.registerReceiver(downloadReceiver, filter)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(context, "Download started but auto-open may not work", Toast.LENGTH_SHORT).show()
+            }
             
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(context, "Download failed: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    private fun checkDownloadStatusAndOpen(downloadManager: DownloadManager, downloadId: Long, fileName: String) {
+        try {
+            val query = DownloadManager.Query()
+            query.setFilterById(downloadId)
+            val cursor: Cursor? = downloadManager.query(query)
+            
+            cursor?.use { c ->
+                if (c.moveToFirst()) {
+                    val statusIndex = c.getColumnIndex(DownloadManager.COLUMN_STATUS)
+                    val reasonIndex = c.getColumnIndex(DownloadManager.COLUMN_REASON)
+                    
+                    if (statusIndex >= 0) {
+                        val status = c.getInt(statusIndex)
+                        when (status) {
+                            DownloadManager.STATUS_SUCCESSFUL -> {
+                                Toast.makeText(context, "Download completed successfully", Toast.LENGTH_SHORT).show()
+                                // PDF'i aç
+                                openPdfFile(fileName)
+                            }
+                            DownloadManager.STATUS_FAILED -> {
+                                val reason = if (reasonIndex >= 0) c.getInt(reasonIndex) else -1
+                                val errorMsg = getDownloadErrorMessage(reason)
+                                Toast.makeText(context, "Download failed: $errorMsg", Toast.LENGTH_LONG).show()
+                            }
+                            else -> {
+                                Toast.makeText(context, "Download status: $status", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(context, "Error checking download status: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    private fun getDownloadErrorMessage(reason: Int): String {
+        return when (reason) {
+            DownloadManager.ERROR_CANNOT_RESUME -> "Cannot resume download"
+            DownloadManager.ERROR_DEVICE_NOT_FOUND -> "Device not found"
+            DownloadManager.ERROR_FILE_ALREADY_EXISTS -> "File already exists"
+            DownloadManager.ERROR_FILE_ERROR -> "File error"
+            DownloadManager.ERROR_HTTP_DATA_ERROR -> "HTTP data error"
+            DownloadManager.ERROR_INSUFFICIENT_SPACE -> "Insufficient space"
+            DownloadManager.ERROR_TOO_MANY_REDIRECTS -> "Too many redirects"
+            DownloadManager.ERROR_UNHANDLED_HTTP_CODE -> "Unhandled HTTP code"
+            DownloadManager.ERROR_UNKNOWN -> "Unknown error"
+            else -> "Download failed"
         }
     }
     
@@ -101,10 +150,33 @@ class DownloadHelper(private val context: Context) {
                 }
                 
                 // PDF açabilecek uygulama var mı kontrol et
-                if (intent.resolveActivity(context.packageManager) != null) {
-                    context.startActivity(intent)
+                val resolveInfo = context.packageManager.resolveActivity(intent, 0)
+                if (resolveInfo != null) {
+                    try {
+                        context.startActivity(intent)
+                        Toast.makeText(context, "Opening PDF...", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        // Direct intent failed, try chooser
+                        val chooserIntent = Intent.createChooser(intent, "Open PDF with")
+                        chooserIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        try {
+                            context.startActivity(chooserIntent)
+                        } catch (e2: Exception) {
+                            Toast.makeText(context, "Could not open PDF. Please check Downloads folder.", Toast.LENGTH_LONG).show()
+                        }
+                    }
                 } else {
-                    Toast.makeText(context, "No PDF viewer app found. Please install a PDF reader.", Toast.LENGTH_LONG).show()
+                    // No PDF app found, show message with link to Play Store
+                    Toast.makeText(context, "No PDF viewer found. File saved to Downloads. Please install a PDF reader app.", Toast.LENGTH_LONG).show()
+                    
+                    // Try to open Play Store for PDF reader
+                    try {
+                        val playStoreIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://search?q=pdf reader"))
+                        playStoreIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        context.startActivity(playStoreIntent)
+                    } catch (e: Exception) {
+                        // Play Store not available, do nothing
+                    }
                 }
             } else {
                 Toast.makeText(context, "File not found: $cleanFileName", Toast.LENGTH_SHORT).show()
@@ -129,6 +201,17 @@ class DownloadHelper(private val context: Context) {
             file.exists()
         } catch (e: Exception) {
             false
+        }
+    }
+    
+    fun cleanup() {
+        downloadReceiver?.let { receiver ->
+            try {
+                context.unregisterReceiver(receiver)
+                downloadReceiver = null
+            } catch (e: Exception) {
+                // Already unregistered
+            }
         }
     }
 } 
